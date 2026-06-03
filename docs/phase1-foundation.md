@@ -6,4 +6,4 @@
 -Created health route(route.py)
 -Added heath route in main.py(fastapi app)
 -Added asunchronous features in main and health (asycn & lifespan)
--Pushed phase 1 to github
+-Pushed phase 1 to githubg
