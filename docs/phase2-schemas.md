@@ -7,4 +7,4 @@
 - Created response_schema.py — ResponseStatus, EvaluationResponse, and ErrorResponse
 - All schemas are synchronous Pydantic models (no async needed — pure validation logic)
 - Local commit
-- Pushed phase 2 to github
+- Pushed phase 2 to githu

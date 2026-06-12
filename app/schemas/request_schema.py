@@ -20,7 +20,7 @@ class EvaluationRequest(BaseModel):
     def validate_metrics_match_task_type(self):
 
         validate_metrics_by_task(
-            task_type=self.task_type,
+            tasktype=self.tasktype,
             metrics=self.metrics,
         )
 

@@ -1,16 +1,16 @@
 from enum import Enum
 from typing import Any, Dict, Optional
-from pyndatic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 class task_type(str, Enum):
     classification ="classification"
     regression = "regression"
 
-class classificationMetrics():
+class classificationMetrics(BaseModel):
     accuracy: Optional[float]=Field(None, le=1, ge=0, description="The accuracy of the classification model.")
     precision: Optional[float]=Field(None, le=1, ge=0,description="The precision of the classification model.")
     recall: Optional[float]=Field(None, le=1, ge=0, description="The recall of the classification model.")
-    f1_score: Optional[float]=Field(None,le=1, ge=0 description="The F1 score of the classification model.")
+    f1_score: Optional[float]=Field(None,le=1, ge=0, description="The F1 score of the classification model.")
     roc_auc: Optional[float]=Field(None,le=1, ge=0, description="The ROC AUC score of the classification model.")
     log_loss: Optional[float]=Field(None, le=1, ge=0,description="The log loss of the classification model.")
 
@@ -23,7 +23,7 @@ class classificationMetrics():
 
         return self
 
-class regressionMetrics():
+class regressionMetrics(BaseModel):
     mae :Optional[float] = Field(None, ge=0, description= " Mean absolute error")
     mse :Optional[float] = Field(None, ge=0, description= " Mean squared error")
     rmse :Optional[float] = Field(None, ge=0, description= " Root mean absolute error")
@@ -38,7 +38,7 @@ class regressionMetrics():
 
         return self
 
-def valdate_metrics_by_task():
+def validate_metrics_by_task(tasktype : task_type, metrics : dict):
     if tasktype == task_type.classification:
         return classificationMetrics.model_validate(metrics)
 
