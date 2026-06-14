@@ -6,7 +6,7 @@ from app.schemas.report_schema import EvaluationSource
 from app.services.metrics_service import preprocess_metrics
 from app.utils.prompts import build_evaluation_prompt
 from app.utils.logger import get_logger
-from app.services.llm_service import generate_llm_evaluation
+from app.services.llm_service import generate_llm_evaluation, get_format_instructions
 
 logger = get_logger(__name__)
 
@@ -23,11 +23,16 @@ async def evaluate_from_metrics(request: EvaluationRequest) -> EvaluationRespons
         
         logger.info("proccessed metrics")
 
+        format_instructions = get_format_instructions()
+
+        logger.info("format instruction in evaluation service")
+
         prompt = build_evaluation_prompt(
             model_name=request.model_name,
             tasktype=request.tasktype,
             processed_metrics=processed_metrics,
-            experiment_metadata=request.experiment_metadata
+            experiment_metadata=request.experiment_metadata,
+            format_instructions= format_instructions
 
 
         )
@@ -40,15 +45,27 @@ async def evaluate_from_metrics(request: EvaluationRequest) -> EvaluationRespons
 
         report_id = f"report_{uuid4().hex[:12]}"
 
+        recommendations_text = " ".join(
+        f"{index + 1}. {recommendation}"
+        for index, recommendation in enumerate(llm_output.recommendations)
+         )
+
+        summary = (
+            f"{llm_output.performance_summary} "
+            f"Risk Assessment: {llm_output.risk_assessment} "
+            f"Recommendations: {recommendations_text}"
+        )
+      
+
         return EvaluationResponse(
-            message="Evaluation metrics processed successfully.",
-            report_id=report_id,
-            evaluation_source=EvaluationSource.metrics,
-            model_name=request.model_name,
-            tasktype=request.tasktype,
-            summary= llm_output,
-            risk_level="Unknown",
-            deployment_readiness="Not assessed yet"
+        message="Structured LLM evaluation completed successfully.",
+        report_id=report_id,
+        evaluation_source=EvaluationSource.metrics,
+        model_name=request.model_name,
+        tasktype=request.tasktype,
+        summary=summary,
+        risk_level=llm_output.risk_level,
+        deployment_readiness=llm_output.deployment_readiness,
         )
            
         

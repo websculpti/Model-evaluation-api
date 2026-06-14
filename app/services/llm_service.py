@@ -1,9 +1,14 @@
 import os
 from dotenv import load_dotenv
+from langchain_core.exceptions import OutputParserException
+from langchain_core.output_parsers import PydanticOutputParser
 from langchain_groq import ChatGroq
 from app.utils.logger import get_logger
 
+from app.schemas.response_schema import LLMEvaluationOutput
+
 logger = get_logger(__name__)
+
 
 load_dotenv()
 
@@ -39,12 +44,37 @@ def get_llm() -> ChatGroq:
         logger.exception(e)
         raise
 
+def get_output_parser() -> PydanticOutputParser:
+
+    logger.info("getting output parser")
+
+    return PydanticOutputParser(pydantic_object=LLMEvaluationOutput)
+
+
+
+def get_format_instructions() -> str:
+  
+    parser = get_output_parser()
+
+    logger.info("getting parser format")
+
+    return parser.get_format_instructions()
+
   
 async def generate_llm_evaluation(prompt : str) -> str:
-   
     llm = get_llm()
+    parser = get_output_parser()
+
     response = await llm.ainvoke(prompt)
+    raw_output = response.content
 
-    logger.info("got llm response")
+    try:
+        parsed_output = parser.parse(raw_output)
+    except OutputParserException as exc:
+        raise ValueError(
+            "LLM returned output that could not be parsed into the required structure."
+        ) from exc
 
-    return response.content
+    return parsed_output
+   
+    

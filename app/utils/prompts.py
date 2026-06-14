@@ -25,13 +25,12 @@ Processed Metrics:
 Experiment Metadata:
 {experiment_metadata}
 
-Your task is to generate a structured model evaluation report.
+Return the evaluation using the required structured format.
 
-The report must include:
-1. Performance Summary
-2. Risk Assessment
-3. Deployment Readiness
-4. Recommendations
+Format Instructions:
+{format_instructions}
+
+Your task is to generate a structured model evaluation report.
 
 Important rules:
 - Do not assume metrics that are not present.
@@ -64,13 +63,9 @@ def build_evaluation_prompt(
     tasktype: task_type,
     processed_metrics: dict[str, Any],
     experiment_metadata: Any | None = None,
+    format_instructions:str ="",
 ) -> str:
-    """
-    Build the final LLM-ready evaluation prompt.
-
-    This function does not call the LLM.
-    It only formats structured project data into a prompt.
-    """
+   
 
     metadata_dict = convert_to_serializable_dict(experiment_metadata)
 
@@ -79,6 +74,7 @@ def build_evaluation_prompt(
         tasktype=tasktype.value,
         processed_metrics=json.dumps(processed_metrics, indent=2),
         experiment_metadata=json.dumps(metadata_dict, indent=2),
+        format_instructions= format_instructions,
     )
 
     return prompt
