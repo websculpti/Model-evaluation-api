@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 from app.schemas.request_schema import EvaluationRequest
+from app.services.report_service import generate_evaluation_report
 from app.schemas.response_schema import EvaluationResponse
 from app.schemas.report_schema import EvaluationSource
 from app.services.metrics_service import preprocess_metrics
@@ -12,10 +13,8 @@ logger = get_logger(__name__)
 
 async def evaluate_from_metrics(request: EvaluationRequest) -> EvaluationResponse:
 
-
     try :
         
-       
         processed_metrics = preprocess_metrics(
         tasktype=request.tasktype,
         metrics=request.metrics,
@@ -41,31 +40,40 @@ async def evaluate_from_metrics(request: EvaluationRequest) -> EvaluationRespons
 
         llm_output = await generate_llm_evaluation(prompt)
 
+        report = generate_evaluation_report(
+        request=request,
+        processed_metrics=processed_metrics,
+        llm_output=llm_output,
+        evaluation_source=EvaluationSource.metrics,
+        )
+
         logger.info("received llm response")
 
         report_id = f"report_{uuid4().hex[:12]}"
 
         recommendations_text = " ".join(
         f"{index + 1}. {recommendation}"
-        for index, recommendation in enumerate(llm_output.recommendations)
+        for index, recommendation in enumerate(report.content.recommendations)
          )
 
         summary = (
-            f"{llm_output.performance_summary} "
-            f"Risk Assessment: {llm_output.risk_assessment} "
+            f"{report.content.performance_summary} "
+            f"Risk Assessment: {report.content.risk_assessment} "
             f"Recommendations: {recommendations_text}"
         )
       
-
+        logger.info("Ready to return")
+        
         return EvaluationResponse(
-        message="Structured LLM evaluation completed successfully.",
-        report_id=report_id,
-        evaluation_source=EvaluationSource.metrics,
-        model_name=request.model_name,
-        tasktype=request.tasktype,
+        message="Evaluation report generated successfully.",
+        report_id=report.metadata.report_id,
+        evaluation_source=report.metadata.evaluation_source,
+        model_name=report.metadata.model_name,
+        tasktype=report.metadata.tasktype,
         summary=summary,
         risk_level=llm_output.risk_level,
-        deployment_readiness=llm_output.deployment_readiness,
+        deployment_readiness=report.content.deployment_readiness,
+   
         )
            
         
