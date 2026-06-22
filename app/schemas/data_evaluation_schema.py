@@ -5,5 +5,6 @@ from app.schemas.metrics_schema import task_type
 
 class DataEvaluationMetadata(BaseModel):
     tasktype: task_type
-    target_column: str
+    target_column: str 
     model_name: str
+    framework: str ="scikit-learn"

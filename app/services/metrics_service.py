@@ -115,6 +115,7 @@ def generate_regression_flags(metrics: dict[str, Any]) -> list[str]:
     r2_score = metrics.get("r2_score")
     mae = metrics.get("mae")
     rmse = metrics.get("rmse")
+    mse = metrics.get("mse")
 
     if r2_score is not None:
         if r2_score >= 0.80:

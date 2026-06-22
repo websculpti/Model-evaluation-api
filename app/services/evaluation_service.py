@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from app.schemas.request_schema import EvaluationRequest
 from app.services.report_service import generate_evaluation_report
-from app.schemas.response_schema import EvaluationResponse
+from app.schemas.response_schema import EvaluationResponse, ErrorResponse
 from app.schemas.report_schema import EvaluationSource
 from app.services.metrics_service import preprocess_metrics
 from app.utils.prompts import build_evaluation_prompt
@@ -11,7 +11,7 @@ from app.services.llm_service import generate_llm_evaluation, get_format_instruc
 
 logger = get_logger(__name__)
 
-async def evaluate_from_metrics(request: EvaluationRequest) -> EvaluationResponse:
+async def evaluate_from_metrics(request: EvaluationRequest, evaluation_source: EvaluationSource = EvaluationSource.metrics ) -> EvaluationResponse:
 
     try :
         
@@ -44,12 +44,12 @@ async def evaluate_from_metrics(request: EvaluationRequest) -> EvaluationRespons
         request=request,
         processed_metrics=processed_metrics,
         llm_output=llm_output,
-        evaluation_source=EvaluationSource.metrics,
+        evaluation_source= evaluation_source,
         )
 
         logger.info("received llm response")
 
-        report_id = f"report_{uuid4().hex[:12]}"
+       # report_id = f"report_{uuid4().hex[:12]}"
 
         recommendations_text = " ".join(
         f"{index + 1}. {recommendation}"
@@ -67,7 +67,7 @@ async def evaluate_from_metrics(request: EvaluationRequest) -> EvaluationRespons
         return EvaluationResponse(
         message="Evaluation report generated successfully.",
         report_id=report.metadata.report_id,
-        evaluation_source=report.metadata.evaluation_source,
+        evaluation_source=evaluation_source,
         model_name=report.metadata.model_name,
         tasktype=report.metadata.tasktype,
         summary=summary,

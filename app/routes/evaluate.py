@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, File, Form, UploadFile
 import pandas as pd
 
 from app.schemas.request_schema import EvaluationRequest
-from app.schemas.response_schema import EvaluationResponse
+from app.schemas.response_schema import EvaluationResponse, ErrorResponse
 from app.services.evaluation_service import evaluate_from_metrics 
 from app.schemas.data_evaluation_schema import DataEvaluationMetadata
 from app.services.model_service import load_uploaded_model
@@ -68,15 +68,59 @@ async def evaluate_from_data(
 
     try:
 
-
         prediction_Result=run_prediction_and_metric_calculation(model,x_test,y_test,metadata_dict["tasktype"])
 
         logger.info("prediction result")
+
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=f"Prediction and metric calculation failed: {str(e)}",
         )
+
+
+    internal_request = EvaluationRequest(
+        tasktype=metadata_dict['tasktype'],
+        model_name=metadata_dict['model_name'],
+        metrics=prediction_Result.metrics,
+        experiment_metadata={
+            "tasktype": metadata_dict['tasktype'],
+            "target_column": metadata_dict['target_column'],
+            "model_name":metadata_dict['model_name'],
+            "framework": metadata_dict['framework'],
+            "notes": (
+                "Metrics were calculated internally from uploaded model "
+                "and dataset files."
+        ),
+    },
+)   
+    try:
+
+        response = await evaluate_from_metrics(
+        request=internal_request,
+        evaluation_source=EvaluationSource.data,
+        )
+
+        logger.info("evaluation done")
+
+        return response.model_dump(mode="json")
+
+      
+
+    except Exception as exc:
+        logger.error(f"Data evaluation failed: {str(exc)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Data evaluation failed: {str(exc)}",
+        )
+
+
+
+
+
+
+    
+'''
     metrics_text = ", ".join(
         f"{metric_name}: {metric_value:.4f}"
         for metric_name, metric_value in prediction_Result.metrics.items()
@@ -98,6 +142,6 @@ async def evaluate_from_data(
         ),
         risk_level="Not assessed yet",
         deployment_readiness="Not assessed yet",
-    )
+    )'''
   
    
